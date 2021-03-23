@@ -1,5 +1,5 @@
 import React from 'react';
-import { log } from './App';
+import { log, capitalize } from './App';
 import { Controls } from "./Controls";
 import { Rainbow } from "./Rainbow";
 
@@ -25,39 +25,94 @@ export class Column extends React.Component {
     this.setState({ size });
   }
 
+  // state.realRed, realRed
+  primary(color, previous, updated) {
+    const diffBudget = previous - updated; // int, purposefully backwards
+    const intBudget = 9 - updated;
+    const calculated = {diffBudget, intBudget}
+
+    const final = Math.round(updated);
+    calculated[color] = final;
+
+    calculated['real' + capitalize(color)] = updated
+
+    return calculated
+  }
+
+  secondary(color, previous, primary) {
+    var diffBudget = primary.diffBudget
+    const eachBudget = diffBudget / 2; // for secondary and ternary
+
+    var real = previous + eachBudget;
+    if (real < 0 || real > 9) {
+      diffBudget += real;
+      real = 0;
+    } else {
+      diffBudget -= eachBudget;
+    }
+
+    const calculated = {diffBudget}
+
+    const final = Math.round(real);
+    calculated[color] = final;
+
+    calculated['intBudget'] = primary.intBudget - final
+
+    calculated['real' + capitalize(color)] = real
+
+    return calculated
+  }
+
+  ternary(color, previous, secondary) {
+    const real = previous + secondary.diffBudget;
+    const final = secondary.intBudget
+
+    const calculated = {};
+    calculated[color] = final;
+    calculated['real' + capitalize(color)] = real;
+    return calculated
+  }
+
   handleRedChange(realRed) {
     this.setState(function (state, _props) {
-      var diffBudget = state.realRed - realRed; // int, purposefully backwards
-      const eachBudget = diffBudget / 2; // for green and violet
-      log({ eachBudget, diffBudget, realRed });
-
-      var realGreen = state.realGreen - eachBudget;
-      if (realGreen < 0 || realGreen > 9) {
-        diffBudget += realGreen;
-        realGreen = 0;
-      } else {
-        diffBudget -= eachBudget;
-      }
-      const realViolet = state.realViolet - diffBudget;
-
-      const red = Math.round(realRed);
-      const green = Math.round(realGreen);
-      const violet = 9 - red - green;
-      log({ eachBudget, diffBudget, realRed, red, realGreen, green, realViolet, violet });
+      const p = this.primary('red', state.realRed, realRed)
+      const s = this.secondary('green', state.realGreen, p)
+      const t = this.ternary('violet', state.realViolet, s)
+      log({ ...p, ...s, ...t})
       return {
-        realRed, red,
-        realGreen, green,
-        realViolet, violet,
+        ...p,  // red
+        ...s, // green
+        ...t // violet
       };
     });
   }
 
   handleGreenChange(green) {
-    this.setState({ green });
+    this.setState(function (state, _props) {
+        const p = this.primary('green', state.realGreen, green)
+        const s = this.secondary('violet', state.realViolet, p)
+        const t = this.ternary('red', state.realRed, s)
+        log({ ...p, ...s, ...t})
+        return {
+          ...p,  // green
+          ...s, // violet
+          ...t // red
+        };
+      });
   }
 
   handleVioletChange(violet) {
-    this.setState({ violet });
+    this.setState(function (state, _props) {
+        const p = this.primary('violet', state.realViolet, violet)
+        const s = this.secondary('red', state.realRed, p)
+        const t = this.ternary('green', state.realGreen, s)
+        log({ ...p, ...s, ...t})
+        return {
+          ...p,  // violet
+          ...s, // red
+          ...t // green
+        };
+      });  
   }
 
   render() {

@@ -7,6 +7,11 @@ export function log(value) {
   console.log(value); //eslint-disable-line
 }
 
+export function capitalize(s) {
+  if (typeof s !== 'string') return ''
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 class App extends React.Component {
   render() {
     return (
